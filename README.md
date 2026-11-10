@@ -34,4 +34,4 @@ The request uses `/chat/completions`, `max_completion_tokens`, and `/embeddings`
 - HotpotQA examples generally have their own context. N > 1 is therefore a reuse scenario unless the same compressed context is genuinely shared by multiple queries. State this limitation in reports.
 - Oracle is a diagnostic upper bound, not a deployable method.
 - The compression prompt requests a ratio but does not hard-enforce a tokenizer-level ratio. Inspect realized token counts and refine with the tokenizer for your selected model.
-- Results depend on model/provider, prompts, and the choices not fully specified in the paper. Record them in your report.
+- Results depend on model/provider, prompts, and the choices.
