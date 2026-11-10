@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ContextPipeline Web Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md px-6 py-3 flex flex-wrap justify-between items-center gap-4 sticky top-0 z-30 shadow-lg">
+        <div class="flex items-center gap-3">
+            <span class="text-sm font-semibold tracking-wide text-slate-200">AI Chat Interface</span>
+            <div class="flex items-center gap-1.5 text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 hover:text-cyan-400 cursor-pointer transition"><path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.243a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 1011.712-3.138.75.75 0 00-1.442.39z" clip-rule="evenodd"/></svg>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 text-xs font-mono">
+            <div class="bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2 text-slate-300 shadow-inner">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Model: <strong class="text-cyan-400 font-semibold">openai/gpt-4o-mini</strong>
+            </div>
+            <div class="bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-400 hidden sm:block">
+                Provider: <span class="text-cyan-300">OpenRouter API</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Body Layout (Sidebar + Main Content) -->
+    <div class="flex-1 flex flex-col md:flex-row">
+        
+        <!-- Left Sidebar: Metrics, Config, History -->
+        <aside class="w-full md:w-80 border-r border-slate-800/80 bg-slate-900/30 p-5 flex flex-col gap-6 shrink-0">
+            <!-- App Branding -->
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-cyan-600 flex items-center justify-center font-bold text-white shadow-lg shadow-cyan-950">CP</div>
+                <div>
+                    <h1 class="text-sm font-bold tracking-wide text-slate-100 flex items-center gap-2">
+                        ContextPipeline <span class="text-[10px] px-1.5 py-0.5 bg-emerald-950 border border-emerald-800 text-emerald-400 rounded">ACTIVE</span>
+                    </h1>
+                    <p class="text-[11px] text-slate-400 font-mono">Backend: com.example.context</p>
+                </div>
+            </div>
+
+            <!-- Session Token Metrics -->
+            <div class="flex flex-col gap-3">
+                <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest font-mono">Session Token Metrics</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-900/80 border border-slate-800/80 p-3 rounded-xl shadow-sm">
+                        <div class="text-[10px] text-slate-400 font-mono uppercase">Total Prompt</div>
+                        <div id="metric-prompt" class="text-xl font-bold text-cyan-400 font-mono mt-1">0</div>
+                    </div>
+                    <div class="bg-slate-900/80 border border-slate-800/80 p-3 rounded-xl shadow-sm">
+                        <div class="text-[10px] text-slate-400 font-mono uppercase">Total Output</div>
+                        <div id="metric-output" class="text-xl font-bold text-emerald-400 font-mono mt-1">0</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-900/80 border border-slate-800/80 p-3 rounded-xl shadow-sm">
+                        <div class="text-[10px] text-slate-400 font-mono uppercase">Cumulative Cost</div>
+                        <div id="metric-cost" class="text-base font-bold text-slate-200 font-mono mt-1">$0.000000</div>
+                    </div>
+                    <div class="bg-slate-900/80 border border-slate-800/80 p-3 rounded-xl shadow-sm">
+                        <div class="text-[10px] text-slate-400 font-mono uppercase">Queries</div>
+                        <div id="metric-queries" class="text-base font-bold text-slate-200 font-mono mt-1">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Environment Setup -->
+            <div class="flex flex-col gap-2">
+                <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest font-mono">Environment Setup</h3>
+                <div class="bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-xl font-mono text-[11px] flex flex-col gap-2 text-slate-300">
+                    <div><span class="text-slate-500">BASE_URL:</span><br><span class="text-cyan-300">openrouter.ai/api/v1</span></div>
+                    <div><span class="text-slate-500">MAX_TOKENS:</span><br><span class="text-slate-200">500</span></div>
+                    <div><span class="text-slate-500">AUTH:</span><br><span class="text-emerald-400">sk-or-v1-*** (Loaded)</span></div>
+                </div>
+            </div>
+
+            <!-- Preset Prompts -->
+            <div class="flex flex-col gap-2">
+                <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest font-mono">Preset Prompts</h3>
+                <div class="flex flex-col gap-2">
+                    <button onclick="setPrompt('What is 2 + 2?')" class="text-left text-xs bg-slate-900/80 hover:bg-slate-800 border border-slate-800 p-2.5 rounded-xl transition text-slate-300 flex items-center gap-2">
+                        <span>⚡</span> What is 2 + 2?
+                    </button>
+                    <button onclick="setPrompt('What is an apple?')" class="text-left text-xs bg-slate-900/80 hover:bg-slate-800 border border-slate-800 p-2.5 rounded-xl transition text-slate-300 flex items-center gap-2">
+                        <span>🍏</span> What is an apple?
+                    </button>
+                    <button onclick="setPrompt('Explain Efficiency Frontier in LLM context management')" class="text-left text-xs bg-slate-900/80 hover:bg-slate-800 border border-slate-800 p-2.5 rounded-xl transition text-slate-300 flex items-center gap-2">
+                        <span>📊</span> Explain Efficiency Frontier
+                    </button>
+                </div>
+            </div>
+
+            <!-- Query History Section -->
+            <div class="flex flex-col gap-2">
+                <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest font-mono">Query History</h3>
+                <div id="history-list" class="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1">
+                    <span class="text-xs text-slate-500 italic">No queries yet...</span>
+                </div>
+            </div>
+
+            <!-- Clear Button -->
+            <div class="mt-auto pt-4 border-t border-slate-800/80">
+                <button onclick="clearLogs()" class="w-full py-2.5 bg-slate-900 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-900 text-slate-400 hover:text-rose-300 text-xs rounded-xl transition font-medium flex items-center justify-center gap-2">
+                    🗑️ Clear Session Logs
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="flex-1 flex flex-col p-6 max-w-4xl mx-auto w-full gap-6 pb-32">
+            
+            <!-- Chat Feed Container -->
+            <div id="chat-feed" class="flex flex-col gap-6 flex-1">
+                <!-- Empty State Banner -->
+                <div id="empty-state" class="p-8 rounded-2xl bg-slate-900/40 border border-slate-800/80 shadow-xl text-center flex flex-col items-center justify-center gap-3 my-auto py-20">
+                    <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-xl font-bold">
+                        ⚡
+                    </div>
+                    <h2 class="font-semibold text-slate-100 text-base">Interactive Model Pipeline Ready</h2>
+                    <p class="text-xs text-slate-400 max-w-md leading-relaxed">
+                        Connected to OpenRouter API utilizing <code class="text-cyan-300 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">openai/gpt-4o-mini</code>. Every query calculates prompt, output, and cumulative usage.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Floating Input Footer Bar -->
+            <div class="fixed bottom-0 left-0 md:left-80 right-0 bg-slate-950/90 backdrop-blur-xl border-t border-slate-800/80 p-4 shadow-2xl z-20">
+                <div class="max-w-4xl mx-auto flex flex-col gap-2">
+                    <div class="flex gap-3 items-center">
+                        <input id="user-input" type="text" placeholder="Ask a question or enter a prompt..." 
+                            class="flex-1 bg-slate-900 border border-slate-800 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-cyan-500 text-slate-100 placeholder-slate-500 text-sm shadow-inner transition-all">
+                        <button onclick="sendQuery()" id="send-btn" class="bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white px-7 py-3.5 rounded-2xl font-semibold transition-all text-sm flex items-center gap-2 shadow-lg shadow-cyan-950">
+                            <span>Send</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h6.115a.75.75 0 010 1.5H5.135a1.5 1.5 0 00-1.442 1.086l-1.414 4.926a.75.75 0 00.826.95 28.896 28.896 0 0015.252-7.486.75.75 0 000-1.064A28.89 28.89 0 003.105 2.289z" /></svg>
+                        </button>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px] text-slate-500 px-1 font-mono">
+                        <span>Press Enter to send query</span>
+                        <span class="text-emerald-400">Java Backend Sync: Connected</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Client Script -->
+    <script>
+        // Session state tracking for metrics and query history
+        let totalPromptTokens = 0;
+        let totalOutputTokens = 0;
+        let queryCount = 0;
+        let queryHistory = [];
+
+        function setPrompt(text) {
+            document.getElementById('user-input').value = text;
+            document.getElementById('user-input').focus();
+        }
+
+        function updateHistoryUI() {
+            const historyList = document.getElementById('history-list');
+            if (queryHistory.length === 0) {
+                historyList.innerHTML = `<span class="text-xs text-slate-500 italic">No queries yet...</span>`;
+                return;
+            }
+
+            historyList.innerHTML = queryHistory.map((q, index) => `
+                <button onclick="setPrompt(${escapeQuote(q)})" class="text-left text-xs bg-slate-900 hover:bg-slate-800 border border-slate-800/80 px-3 py-2 rounded-xl transition text-slate-300 truncate w-full font-mono flex items-center gap-2">
+                    <span class="text-cyan-400">#${index + 1}</span> <span class="truncate">${escapeHtml(q)}</span>
+                </button>
+            `).join('');
+        }
+
+        async function sendQuery() {
+            const inputField = document.getElementById('user-input');
+            const chatFeed = document.getElementById('chat-feed');
+            const emptyState = document.getElementById('empty-state');
+            const prompt = inputField.value.trim();
+
+            if (!prompt) return;
+
+            // Remove empty state banner on first message
+            if (emptyState) emptyState.remove();
+
+            // Append to Query History log
+            queryHistory.unshift(prompt); // Add to the top of the history list
+            updateHistoryUI();
+
+            // 1. Render User Bubble
+            chatFeed.innerHTML += `
+                <div class="flex justify-end">
+                    <div class="max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl bg-cyan-600/20 border border-cyan-500/30 text-slate-100 shadow-md">
+                        <div class="text-[11px] text-cyan-400 font-semibold mb-1 uppercase tracking-wider font-mono">User</div>
+                        <p class="text-sm whitespace-pre-wrap leading-relaxed">${escapeHtml(prompt)}</p>
+                    </div>
+                </div>`;
+            
+            inputField.value = '';
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+            // 2. Render Loading Indicator Bubble
+            const loadingId = 'loading-' + Date.now();
+            chatFeed.innerHTML += `
+                <div id="${loadingId}" class="flex justify-start">
+                    <div class="max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 text-sm flex items-center gap-3 animate-pulse shadow-md">
+                        <div class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-bounce"></div>
+                        <span>[Java Spring Boot backend processing via OpenRouter...]</span>
+                    </div>
+                </div>`;
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+            try {
+                // 3. Post to Spring Boot REST API
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                if (!response.ok) throw new Error("Server error or connection failed.");
+
+                const data = await response.json();
+                
+                // Remove loading element
+                document.getElementById(loadingId).remove();
+
+                // Update Session Metrics
+                totalPromptTokens += data.inputTokens;
+                totalOutputTokens += data.outputTokens;
+                queryCount++;
+
+                // Calculate estimated cost ($0.15 per 1M input, $0.60 per 1M output)
+                const estimatedCost = (totalPromptTokens * (0.15 / 1000000)) + (totalOutputTokens * (0.60 / 1000000));
+
+                document.getElementById('metric-prompt').innerText = totalPromptTokens;
+                document.getElementById('metric-output').innerText = totalOutputTokens;
+                document.getElementById('metric-queries').innerText = queryCount;
+                document.getElementById('metric-cost').innerText = '$' + estimatedCost.toFixed(6);
+
+                // 4. Render Assistant Response with Token Badge
+                chatFeed.innerHTML += `
+                    <div class="flex justify-start">
+                        <div class="max-w-[90%] sm:max-w-[80%] p-5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-200 shadow-xl flex flex-col gap-3">
+                            <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800/80 pb-2">
+                                <span class="text-xs text-cyan-400 font-bold uppercase tracking-wider font-mono flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> AI Assistant (gpt-4o-mini)
+                                </span>
+                                <span class="text-[11px] bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800 text-cyan-300 font-mono">
+                                    Tokens Used &rarr; Input: ${data.inputTokens} | Output: ${data.outputTokens} | Total: ${data.totalTokens}
+                                </span>
+                            </div>
+                            <p class="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">${escapeHtml(data.text)}</p>
+                        </div>
+                    </div>`;
+
+            } catch (err) {
+                document.getElementById(loadingId).remove();
+                chatFeed.innerHTML += `
+                    <div class="flex justify-start">
+                        <div class="max-w-[85%] p-4 rounded-2xl bg-rose-950/40 border border-rose-900/60 text-rose-300 text-sm shadow-md">
+                            <strong class="font-semibold block mb-1">Backend Connection Error</strong>
+                            Could not reach your Spring Boot server. Ensure your backend is running (<code class="font-mono">mvn spring-boot:run</code>).
+                        </div>
+                    </div>`;
+            }
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        function clearLogs() {
+            document.getElementById('chat-feed').innerHTML = `
+                <div id="empty-state" class="p-8 rounded-2xl bg-slate-900/40 border border-slate-800/80 shadow-xl text-center flex flex-col items-center justify-center gap-3 my-auto py-20">
+                    <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-xl font-bold">
+                        ⚡
+                    </div>
+                    <h2 class="font-semibold text-slate-100 text-base">Interactive Model Pipeline Ready</h2>
+                    <p class="text-xs text-slate-400 max-w-md leading-relaxed">
+                        Connected to OpenRouter API utilizing <code class="text-cyan-300 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">openai/gpt-4o-mini</code>. Every query calculates prompt, output, and cumulative usage.
+                    </p>
+                </div>`;
+            totalPromptTokens = 0;
+            totalOutputTokens = 0;
+            queryCount = 0;
+            queryHistory = [];
+            document.getElementById('metric-prompt').innerText = '0';
+            document.getElementById('metric-output').innerText = '0';
+            document.getElementById('metric-queries').innerText = '0';
+            document.getElementById('metric-cost').innerText = '$0.000000';
+            updateHistoryUI();
+        }
+
+        // Trigger send on Enter key
+        document.getElementById('user-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendQuery();
+        });
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function escapeQuote(text) {
+            return JSON.stringify(text);
+        }
+    </script>
+</body>
+</html>

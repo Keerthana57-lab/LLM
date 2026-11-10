@@ -29,7 +29,6 @@ public class LLM {
 
             System.out.println("\n[LLM is thinking...]");
             try {
-                // Passes 3 arguments to match your ModelClient signature
                 ModelClient.ChatResult result = client.chat(
                     "You are a helpful AI assistant.",
                     input,
@@ -39,6 +38,13 @@ public class LLM {
                 System.out.println("\n------------------ LLM RESPONSE ------------------");
                 System.out.println(result.text());
                 System.out.println("--------------------------------------------------");
+                
+                // Displaying token counts
+                int promptTokens = result.inputTokens();
+                int completionTokens = result.outputTokens();
+                int totalTokens = promptTokens + completionTokens;
+                System.out.println("[Tokens Used -> Input: " + promptTokens + " | Output: " + completionTokens + " | Total: " + totalTokens + "]");
+                
             } catch (Exception e) {
                 System.out.println("Error fetching response: " + e.getMessage());
             }
